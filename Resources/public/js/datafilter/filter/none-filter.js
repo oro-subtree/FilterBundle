@@ -1,18 +1,17 @@
-/*global define*/
-define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filter'
-    ], function ($, _, __, AbstractFilter) {
+/* global define */
+define(['jquery', 'underscore', 'oro/translator', 'oro/datafilter/abstract-filter'],
+function($, _, __, AbstractFilter) {
     'use strict';
 
     /**
-     * Text grid filter.
+     * None filter: an empty filter implements 'null object' pattern
      *
      * Triggers events:
      *  - "disable" when filter is disabled
-     *  - "update" when filter criteria is changed
      *
-     * @export  orofilter/js/filter/text-filter
-     * @class   orofilter.filter.TextFilter
-     * @extends orofilter.filter.AbstractFilter
+     * @export  oro/datafilter/none-filter
+     * @class   oro.datafilter.NoneFilter
+     * @extends oro.datafilter.AbstractFilter
      */
     return AbstractFilter.extend({
         wrappable: true,
@@ -26,7 +25,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @property
          */
-        templateSelector: '#text-filter-template',
+        templateSelector: '#none-filter-template',
 
         /**
          * Selector to element of criteria hint
@@ -43,16 +42,11 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
         criteriaSelector: '.filter-criteria',
 
         /**
-         * Selectors for filter criteria elements
+         * A value showed as filter's popup hint
          *
-         * @property {Object}
+         * @property {String}
          */
-        criteriaValueSelectors: {
-            value: 'input[name="value"]',
-            nested: {
-                end: 'input'
-            }
-        },
+        popupHint: 'Choose a value first',
 
         /**
          * View events
@@ -60,9 +54,6 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @property {Object}
          */
         events: {
-            'keyup input': '_onReadCriteriaInputKey',
-            'keydown [type="text"]': '_preventEnterProcessing',
-            'click .filter-update': '_onClickUpdateCriteria',
             'click .filter-criteria-selector': '_onClickCriteriaSelector',
             'click .filter-criteria .filter-criteria-hide': '_onClickCloseCriteria',
             'click .disable-filter': '_onClickDisableFilter'
@@ -74,13 +65,10 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @param {Object} options
          */
         initialize: function (options) {
-            // init empty value object if it was not initialized so far
-            if (_.isUndefined(this.emptyValue)) {
-                this.emptyValue = {
-                    value: ''
-                };
-            }
+            options = _.pick(options || {}, 'popupHint');
+            _.extend(this, options);
 
+            this.label = 'None';
             AbstractFilter.prototype.initialize.apply(this, arguments);
         },
 
@@ -90,32 +78,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
         ensurePopupCriteriaClosed: function () {
             if (this.popupCriteriaShowed) {
                 this._hideCriteria();
-                this.applyValue();
             }
-        },
-
-        /**
-         * Handle key press on criteria input elements
-         *
-         * @param {Event} e
-         * @protected
-         */
-        _onReadCriteriaInputKey: function (e) {
-            if (e.which === 13) {
-                this._hideCriteria();
-                this.applyValue();
-            }
-        },
-
-        /**
-         * Handle click on criteria update button
-         *
-         * @param {Event} e
-         * @private
-         */
-        _onClickUpdateCriteria: function (e) {
-            this._hideCriteria();
-            this.applyValue();
         },
 
         /**
@@ -124,7 +87,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @param {Event} e
          * @protected
          */
-        _onClickCriteriaSelector: function (e) {
+        _onClickCriteriaSelector: function(e) {
             e.stopPropagation();
             $('body').trigger('click');
             if (!this.popupCriteriaShowed) {
@@ -139,7 +102,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @private
          */
-        _onClickCloseCriteria: function () {
+        _onClickCloseCriteria: function() {
             this._hideCriteria();
             this._updateDOMValue();
         },
@@ -149,7 +112,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @param {Event} e
          */
-        _onClickDisableFilter: function (e) {
+        _onClickDisableFilter: function(e) {
             e.preventDefault();
             this.disable();
         },
@@ -160,12 +123,11 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @param {Event} e
          * @protected
          */
-        _onClickOutsideCriteria: function (e) {
+        _onClickOutsideCriteria: function(e) {
             var elem = this.$(this.criteriaSelector);
 
             if (elem.get(0) !== e.target && !elem.has(e.target).length) {
                 this._hideCriteria();
-                this.applyValue();
                 e.stopPropagation();
             }
         },
@@ -176,7 +138,9 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @return {*}
          */
         render: function () {
-            var $filter = $(this.template());
+            var $filter = $(this.template({
+                popupHint: this._getPopupHint()
+            }));
             this._wrap($filter);
             return this;
         },
@@ -190,7 +154,7 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @return {*}
          */
-        remove: function () {
+        remove: function() {
             $('body').off('click', this._clickOutsideCriteriaCallback);
             AbstractFilter.prototype.remove.call(this);
             return this;
@@ -201,11 +165,10 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @protected
          */
-        _showCriteria: function () {
+        _showCriteria: function() {
             this.$(this.criteriaSelector).show();
-            this._focusCriteria();
             this._setButtonPressed(this.$(this.criteriaSelector), true);
-            setTimeout(_.bind(function () {
+            setTimeout(_.bind(function() {
                 this.popupCriteriaShowed = true;
             }, this), 100);
         },
@@ -215,57 +178,36 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          *
          * @protected
          */
-        _hideCriteria: function () {
+        _hideCriteria: function() {
             this.$(this.criteriaSelector).hide();
             this._setButtonPressed(this.$(this.criteriaSelector), false);
-            setTimeout(_.bind(function () {
+            setTimeout(_.bind(function() {
                 this.popupCriteriaShowed = false;
             }, this), 100);
         },
 
         /**
-         * Focus filter criteria input
-         *
-         * @protected
-         */
-        _focusCriteria: function () {
-            this.$(this.criteriaSelector + ' input').focus().select();
-        },
-
-        /**
          * @inheritDoc
          */
-        _writeDOMValue: function (value) {
-            this._setInputValue(this.criteriaValueSelectors.value, value.value);
+        _writeDOMValue: function(value) {
             return this;
         },
 
         /**
          * @inheritDoc
          */
-        _readDOMValue: function () {
-            return {
-                value: this._getInputValue(this.criteriaValueSelectors.value)
-            };
+        _readDOMValue: function() {
+            return {};
         },
 
         /**
-         * @inheritDoc
-         */
-        _onValueUpdated: function (newValue, oldValue) {
-            AbstractFilter.prototype._onValueUpdated.apply(this, arguments);
-            this._updateCriteriaHint();
-        },
-
-        /**
-         * Updates criteria hint element with actual criteria hint value
+         * Get popup hint value
          *
+         * @return {String}
          * @protected
-         * @return {*}
          */
-        _updateCriteriaHint: function () {
-            this.$(this.criteriaHintSelector).html(this._getCriteriaHint());
-            return this;
+        _getPopupHint: function() {
+            return this.popupHint ? this.popupHint: this.popupHint;
         },
 
         /**
@@ -274,9 +216,8 @@ define(['jquery', 'underscore', 'orotranslation/js/translator', './abstract-filt
          * @return {String}
          * @protected
          */
-        _getCriteriaHint: function () {
-            var value = (arguments.length > 0) ? this._getDisplayValue(arguments[0]) : this._getDisplayValue();
-            return value.value ? '"' + value.value + '"' : this.placeholder;
+        _getCriteriaHint: function() {
+            return this.criteriaHint ? this.criteriaHint: this.placeholder;
         }
     });
 });

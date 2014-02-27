@@ -1,14 +1,14 @@
-/*global define*/
-define(['underscore', './filters-manager'
-    ], function (_, FiltersManager) {
+/* global define */
+define(['underscore', 'oro/datafilter/filters-manager'],
+function(_, FiltersManager) {
     'use strict';
 
     /**
      * View that represents all grid filters
      *
-     * @export  orofilter/js/collection-filters-manager
-     * @class   orofilter.CollectionFiltersManager
-     * @extends orofilter.FiltersManager
+     * @export  oro/datafilter/collection-filters-manager
+     * @class   oro.datafilter.CollectionFiltersManager
+     * @extends oro.datafilter.FiltersManager
      */
     return FiltersManager.extend({
         /**
@@ -19,7 +19,8 @@ define(['underscore', './filters-manager'
          * @param {Object} [options.filters]
          * @param {String} [options.addButtonHint]
          */
-        initialize: function (options) {
+        initialize: function(options)
+        {
             this.collection = options.collection;
 
             this.collection.on('beforeFetch', this._beforeCollectionFetch, this);
@@ -35,7 +36,7 @@ define(['underscore', './filters-manager'
          * @param {oro.filter.AbstractFilter} filter
          * @protected
          */
-        _onFilterUpdated: function (filter) {
+        _onFilterUpdated: function(filter) {
             if (this.ignoreFiltersUpdateEvents) {
                 return;
             }
@@ -50,7 +51,7 @@ define(['underscore', './filters-manager'
          *
          * @protected
          */
-        _beforeCollectionFetch: function (collection) {
+        _beforeCollectionFetch: function(collection) {
             collection.state.filters = this._createState();
         },
 
@@ -59,7 +60,7 @@ define(['underscore', './filters-manager'
          *
          * @param {oro.PageableCollection} collection
          */
-        _onUpdateCollectionState: function (collection) {
+        _onUpdateCollectionState: function(collection) {
             this.ignoreFiltersUpdateEvents = true;
             this._applyState(collection.state.filters || {});
             this.ignoreFiltersUpdateEvents = false;
@@ -70,7 +71,7 @@ define(['underscore', './filters-manager'
          *
          * @protected
          */
-        _onCollectionReset: function (collection) {
+        _onCollectionReset: function(collection) {
             if (collection.state.totalRecords > 0 && this.$el.children().length > 0) {
                 this.$el.show();
             }
@@ -82,9 +83,9 @@ define(['underscore', './filters-manager'
          * @return {Object}
          * @protected
          */
-        _createState: function () {
+        _createState: function() {
             var state = {};
-            _.each(this.filters, function (filter, name) {
+            _.each(this.filters, function(filter, name) {
                 var shortName = '__' + name;
                 if (filter.enabled) {
                     if (!filter.isEmpty()) {
@@ -107,11 +108,11 @@ define(['underscore', './filters-manager'
          * @protected
          * @return {*}
          */
-        _applyState: function (state) {
+        _applyState: function(state) {
             var toEnable  = [],
                 toDisable = [];
 
-            _.each(this.filters, function (filter, name) {
+            _.each(this.filters, function(filter, name) {
                 var shortName = '__' + name,
                     filterState;
                 if (_.has(state, name)) {
