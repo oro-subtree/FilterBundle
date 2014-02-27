@@ -5,9 +5,9 @@ define(['jquery', 'underscore', './date-filter', 'orolocale/js/locale-settings',
     /**
      * Datetime filter: filter type as option + interval begin and end dates
      *
-     * @export  orofilter/js/filter/datetime-filter
-     * @class   orofilter.filter.DatetimeFilter
-     * @extends orofilter.filter.DateFilter
+     * @export  oro/datafilter/datetime-filter
+     * @class   oro.datafilter.DatetimeFilter
+     * @extends oro.datafilter.DateFilter
      */
     return DateFilter.extend({
         /**
